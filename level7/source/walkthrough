@@ -1,0 +1,15 @@
+- We have a binary here so:
+this algo will apply almost to any binary file to collect info about:
+1) run w and w/o arguments
+2) objdump -d ./<binary> | less #to see asm
+3) objdump -s -j .rodata ./<binary> | less #to see strings
+4) ltrace ./<binary> w and w/o arguments #to see lib calls
+5) gdb <binary> (layout asm, 
+	run < <args>,
+	run ,
+	disas <function name>, 
+	breakpoints on addresses, 
+	info frame, set $<regname>=<value>)
+
+
+
