@@ -1,0 +1,6 @@
+Now we are working not with plane c, but with pravoslavniy c++.
+Long story short there is a class there 2 instances of which is allocated.
+After struggling with gdb we found out that class stores pointer to its methods within it.
+And at the end of the main function this method (operator+) is called.
+So with the help of memcpy we will replace pointer to the operator method with the pointer
+to our injected shellcode.
