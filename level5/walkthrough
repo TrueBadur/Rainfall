@@ -33,15 +33,16 @@ As usual start with
 	 804850a:	e8 b3 ff ff ff       	call   80484c2 <n>
 	 804850f:	c9                   	leave
 	 8048510:	c3                   	ret
-See that there is a call to exit after printf now so we can't rewrite saved eip.
+See that there is a call to exit after printf now, so we can't rewrite saved eip.
 Also see 'o' function which have system call and exit.
 Look through the dump more closely.
-In plt part there is map to dynamicly linked exit function
+In plt part there is map to dynamically linked exit function
 	080483d0 <exit@plt>:
 	 80483d0:	ff 25 38 98 04 08    	jmp    *0x8049838
 	 80483d6:	68 28 00 00 00       	push   $0x28
 	 80483db:	e9 90 ff ff ff       	jmp    8048370 <_init+0x3c>
 Idea is to rewrite value in *0x8049838 to call 'o' function instead of real exit.
+It's also possible because in 'o' function '_exit' is called instead of 'exit', which will be rewritten.
 The rest is pretty much the same as in previous 2 levels, except we need to replace 2 bytes
 instead of 1, so we place address in which should be lesser value at first place and another one
 at second: 

