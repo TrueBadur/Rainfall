@@ -1,20 +1,21 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 int p(void)
 {
   void *eip;
-  char s[76];
+  char buffer[76];
 
   fflush(stdout);
-  gets(s);
-  if ((eip & 0xb0000000) == 0xb0000000)
+  gets(buffer);
+  if (((int)eip & 0xb0000000) == 0xb0000000)
   {
     printf("(%p)\n", eip);
-    _exit(1);
+    exit(1);
   }
-  puts(s);
-  strdup(s);
+  puts(buffer);
+  strdup(buffer);
   return;
 }
 
